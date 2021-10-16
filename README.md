@@ -7,13 +7,9 @@ Welcome to this GitHub page for data analysis on a project that examines how soc
 Variable explanation (For privacy issues, explanations for each variable are not provided but their functions are provided so that you can replace them with the variables in the dataset you would like to run analysis on):
 
 In the code, avoiding behaviors and approaching behaviors are response variables. You may replace them with any response variables you are interested in.
-
 Predictor variables are media stereotypes, ethnic media exposure, American media exposure.
-
 The only control variable here is generation, which specifies the generation of the each participant. The encoding of which is indicated at the beginning of the code, commented as "coding generation."
-
 Mediators are self-esteem, private perception, and public perception. 
-
 Moderators are personal experience discrimination and group experience of discrimination.
 
 
