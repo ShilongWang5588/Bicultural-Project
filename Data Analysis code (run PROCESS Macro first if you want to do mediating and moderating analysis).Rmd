@@ -1,0 +1,279 @@
+---
+title: "Data Analysis code"
+author: "Shilong Wang"
+date: "10/16/2021"
+output: pdf_document
+---
+
+\tableofcontents
+
+\newpage
+
+# Research Question
+According to Doshi and Saleem (2017), their findings "suggest that ethnic media likely have positive effects on ethnic minorities by boosting their ethnic pride and increasing ethnic performance whereas reliance on mainstream media to learn about one’s ethnic group can lead to decreased self-esteem." 
+
+Then I would like to know if media exposure also correlates with how the minority group encounters the majority group.
+
+```{r, echo=TRUE}
+setwd("/Users/wangshilong/Desktop")
+Master_Data <- read.xlsx("master dataset 8.18.xlsx", 
+                         sheet = "R")
+##data cleaning- removing data from participants, identified as Whites
+MD = Master_Data %>% filter(Master_Data$D8 != 1)
+## coding generation
+MD1 = MD %>% mutate(FGen = ifelse(is.na(MD$D1),".",ifelse(MD$D1 == 2, 1,0)))
+MD2 = MD1 %>% mutate(SGenF = ifelse(is.na(MD$D4),".",ifelse(MD$D4 == 2, 1,0)))
+MD3 = MD2 %>% mutate(SGenM = ifelse(is.na(MD$D5),".",ifelse(MD$D5 == 2, 1,0)))
+
+MD4 = MD3 %>% mutate(Gen = ifelse(MD3$FGen == 1, 1, 
+                                  ifelse(MD3$SGenF == 1, 2,
+                                         ifelse(MD3$SGenM == 1, 2,
+                                                ifelse(MD3$FGen==".",".",3)))))
+```
+
+## mediation of the collective self-esteem scale
+
+### testing mediation for avoiding behaviors
+```{r, echo=TRUE}
+##avoiding behaviors
+#match("Gen",names(MD4))
+MDM1 = MD4[,c(184,179:181,214)]
+MDM1E = lm(avoid.AVG~., data = MDM1)
+summary(MDM1E)
+```
+All predicators (media steretypes, ethnic media exposure, and American media exposure) are significant because their p-values are lower than any significance level we would choose.
+Media stereotypes and ethnic media exposure have positive relationships with avoidant behaviors, whereas American media exposure has a negative correlation.
+
+```{r, echo=TRUE}
+# media stereotypes
+process(data = MD4, y = "avoid.AVG", x="media.stereotypes.AVG",
+        m = c("Self.Esteem.AVG","Private.perception.AVG","public.perception.AVG"),
+        cov = ("Gen"), stand=1,model=4)
+```
+Public perception is a significant mediator. This means that public perception may explain why media stereotypes positive associate with avoiding behaviors: when there are more media stereotypes on social media, it is less likely for the participants to think their ethnic group is valued by others; the more negative one thinks about how the group public image, the more likely they are to avoid the majority group.
+
+```{r, echo=TRUE}
+# ethnic.media.exposure.AVG
+process(data = MD4, y = "avoid.AVG", x="ethnic.media.exposure.AVG",
+        m = c("Self.Esteem.AVG","Private.perception.AVG","public.perception.AVG"),
+        effsize = 1, total = 1, contrast =1, boot=10000, modelbt=1, seed = 654321,
+        cov = ("Gen"), stand=1,model=4)
+```
+
+Third variable checking needed: Self-esteem is a significant mediator which explains why ethnic media exposure and avoiding behaviors is positively associated. This means that as participants expose more frequently to ethic media of their own, they are more likely to have higher self-esteem, which in turn associates with less avoiding behaviors. 
+
+```{r}
+# checking for third variable effect. 
+fiti <- lm(avoid.AVG ~ ethnic.media.exposure.AVG * Self.Esteem.AVG, data = MD4)
+summ(fiti, scale = TRUE)
+interact_plot(fiti, pred = "Self.Esteem.AVG", modx = "ethnic.media.exposure.AVG",modxvals = "plus-minus")
+```
+
+
+
+```{r, echo=TRUE}
+# american.media.exposure.AVG
+process(data = MD4, y = "avoid.AVG", x="american.media.exposure.AVG",
+        m = c("Self.Esteem.AVG","Private.perception.AVG","public.perception.AVG"),
+        cov = ("Gen"), stand=1,model=4)
+```
+
+### testing mediation for approaching behaviors
+
+```{r, echo=TRUE}
+MDM2 = MD4[,c(185,179:181,214)]
+MDM2E = lm(approach.AVG~., data = MDM2) 
+summary(MDM2E)
+```
+
+All predictors are significant as shown in the results.
+
+```{r, echo=TRUE}
+## testing mediation for approaching behaviors
+#media.stereotypes.AVG
+process(data = MD4, y = "approach.AVG", x="media.stereotypes.AVG",
+        m = c("Self.Esteem.AVG","Private.perception.AVG","public.perception.AVG"),
+        cov = ("Gen"), stand=1,model=4)
+# self-esteem and private perception seems to be significant mediators but they are
+#very close to 0.
+```
+
+Treat this as no significant mediators: Though the range of the confident intervel almost include 0, private perception seems to be a significant mediator, which explains why media stereotypes is negatively associately with approaching behaviors: more exposure to media stereotypes is associated with higher value one thinks about themselves. As people think more positively about themselves, the less likely they are to approach the majority group.
+
+```{r, echo=TRUE}
+# ethnic.media.exposure.AVG
+process(data = MD4, y = "approach.AVG", x="ethnic.media.exposure.AVG",
+        m = c("Self.Esteem.AVG","Private.perception.AVG","public.perception.AVG"),
+        cov = ("Gen"), stand=1,model=4)
+```
+
+Self-esteem and private perception seem to be significant mediators, which both explain why ethnic media exposure is negatively associated with approaching behaviors: more ethnic media exposure associates with higher self-esteem. Higher self-esteem associates with higher chances of approaching behaviors.
+
+```{r}
+fiti <- lm(approach.AVG ~ ethnic.media.exposure.AVG * Self.Esteem.AVG, data = MD4)
+summ(fiti, scale = TRUE)
+interact_plot(fiti, pred = "Self.Esteem.AVG", modx = "ethnic.media.exposure.AVG",modxvals = "plus-minus")
+```
+
+
+
+
+
+```{r, echo=TRUE}
+# american.media.exposure.AVG
+process(data = MD4, y = "approach.AVG", x="american.media.exposure.AVG",
+        m = c("Self.Esteem.AVG","Private.perception.AVG","public.perception.AVG"),
+        cov = ("Gen"), stand=1,model=4)
+```
+
+None of the mediators seem to be significant in this case.
+
+### testing mediation for confronting behaviors
+
+```{r, echo=TRUE}
+MDM3 = MD4[,c(186,179:181,214)]
+MDM3E = lm(confront.AVG~., data = MDM3)
+summary(MDM3E)
+```
+
+Only ethnic media exposure correclates with confronting behaviors
+
+```{r, echo=TRUE}
+## testing mediation for confronting behaviors
+# ethnic.media.exposure.AVG
+process(data = MD4, y = "confront.AVG", x="ethnic.media.exposure.AVG",
+        m = c("Self.Esteem.AVG","Private.perception.AVG","public.perception.AVG"),
+        cov = ("Gen"), stand=1,model=4)
+```
+
+Self-esteem seems to be significant.
+
+## moderation of the collective self-esteem scale
+
+### testing moderation for avoiding behaviors
+
+```{r, echo=TRUE}
+# x: media.stereotypes.AVG
+process(data = MD4, y = "avoid.AVG", x = "media.stereotypes.AVG",
+        w = "personal.AVG", cov = c("Gen","group.AVG","ethnic.media.exposure.AVG","american.media.exposure.AVG"),
+        model=1, center=2, moments=1, jn=1,
+        modelbt=1, boot=10000,seed=654321)
+```
+
+```{r, echo=TRUE}
+# x: media.stereotypes.AVG
+process(data = MD4, y = "avoid.AVG", x = "media.stereotypes.AVG",
+        w = "group.AVG", cov = c("Gen","personal.AVG","ethnic.media.exposure.AVG","american.media.exposure.AVG"), model=1, center=2, moments=1, jn=1,
+        modelbt=1, boot=10000,seed=654321)
+```
+
+Neither personal nor group discrimination is a significant moderator
+
+```{r, echo=TRUE}
+# x: ethnic.media.exposure.AVG
+process(data = MD4, y = "avoid.AVG", x = "ethnic.media.exposure.AVG",
+        w = "personal.AVG", cov = c("Gen","group.AVG","media.stereotypes.AVG","american.media.exposure.AVG"), model=1, center=2, moments=1, jn=1,modelbt=1, boot=10000,seed=654321)
+```
+
+```{r, echo=TRUE}
+process(data = MD4, y = "avoid.AVG", x = "ethnic.media.exposure.AVG",
+        w = "group.AVG", cov = c("Gen","personal.AVG","american.media.exposure.AVG","media.stereotypes.AVG"), model=1, center=2, moments=1, jn=1,
+        modelbt=1, boot=10000,seed=654321)
+```
+
+Neither personal nor group discrimination is a significant moderator
+
+```{r, echo=TRUE}
+# x: american.media.exposure.AVG
+process(data = MD4, y = "avoid.AVG", x = "american.media.exposure.AVG",
+        w = "personal.AVG", cov = c("Gen","group.AVG","ethnic.media.exposure.AVG","media.stereotypes.AVG"), model=1, center=2, moments=1, jn=1,
+        modelbt=1, boot=10000,seed=654321)
+```
+
+```{r, echo=TRUE}
+process(data = MD4, y = "avoid.AVG", x = "american.media.exposure.AVG",
+        w = "group.AVG", cov = c("Gen","personal.AVG","ethnic.media.exposure.AVG","media.stereotypes.AVG"), model=1, center=2, moments=1, jn=1,
+        modelbt=1, boot=10000,seed=654321)
+```
+
+Neither personal nor group discrimination is a significant moderator
+
+### testing moderation for approaching behaviors
+
+```{r, echo=TRUE}
+# x: media.stereotypes.AVG
+process(data = MD4, y = "approach.AVG", x = "media.stereotypes.AVG",
+        w = "personal.AVG", cov = c("Gen","group.AVG","ethnic.media.exposure.AVG","american.media.exposure.AVG"), model=1, center=2, moments=1, jn=1,
+        modelbt=1, boot=10000,seed=654321)
+```
+
+Personal experiences of discrimination is a significant moderator, which means that media stereotypes is positively associated with approaching behaviors. More so when personal experiences of discrimination is low; less so when they are high.
+
+```{r}
+fiti1 <- lm(approach.AVG ~ media.stereotypes.AVG * personal.AVG, data = MD4)
+summ(fiti1, scale = TRUE)
+interact_plot(fiti1, pred = "personal.AVG", modx = "media.stereotypes.AVG",modxvals = "plus-minus")
+```
+
+
+```{r, echo=TRUE}
+process(data = MD4, y = "approach.AVG", x = "media.stereotypes.AVG",
+        w = "group.AVG", cov = c("Gen","personal.AVG","ethnic.media.exposure.AVG","american.media.exposure.AVG"), model=1, center=2, moments=1, jn=1,
+        modelbt=1, boot=10000,seed=654321)
+```
+
+Group experiences of discrimination is also a significant moderator.
+
+```{r}
+fiti2 <- lm(approach.AVG ~ media.stereotypes.AVG * group.AVG, data = MD4)
+summ(fiti2, scale = TRUE)
+interact_plot(fiti2, pred = "group.AVG", modx = "media.stereotypes.AVG",modxvals = "plus-minus")
+```
+
+
+```{r, echo=TRUE}
+# x: ethnic.media.exposure.AVG
+process(data = MD4, y = "approach.AVG", x = "ethnic.media.exposure.AVG",
+        w = "personal.AVG", cov = "Gen", model=1, center=2, moments=1, jn=1,
+        modelbt=1, boot=10000,seed=654321)
+```
+
+```{r, echo=TRUE}
+process(data = MD4, y = "approach.AVG", x = "ethnic.media.exposure.AVG",
+        w = "group.AVG", cov = c("Gen","personal.AVG","media.stereotypes.AVG","american.media.exposure.AVG"), model=1, center=2, moments=1, jn=1,
+        modelbt=1, boot=10000,seed=654321)
+```
+
+Neither personal nor group discrimination is a significant moderator
+
+```{r, echo=TRUE}
+# x: american.media.exposure.AVG
+process(data = MD4, y = "approach.AVG", x = "american.media.exposure.AVG",
+        w = "personal.AVG", cov = c("Gen","group.AVG","ethnic.media.exposure.AVG","media.stereotypes.AVG"), model=1, center=2, moments=1, jn=1,
+        modelbt=1, boot=10000,seed=654321)
+```
+
+```{r, echo=TRUE}
+process(data = MD4, y = "approach.AVG", x = "american.media.exposure.AVG",
+        w = "group.AVG", cov = c("Gen","personal.AVG","ethnic.media.exposure.AVG","media.stereotypes.AVG"), model=1, center=2, moments=1, jn=1,
+        modelbt=1, boot=10000,seed=654321)
+```
+
+Neither personal nor group discrimination is a significant moderator
+
+### testing moderation for confronting behaviors
+
+```{r, echo=TRUE}
+# x: ethnic.media.exposure.AVG
+process(data = MD4, y = "confront.AVG", x = "ethnic.media.exposure.AVG",
+        w = "personal.AVG", cov = "Gen", model=1, center=2, moments=1, jn=1,
+        modelbt=1, boot=10000,seed=654321)
+```
+
+```{r, echo=TRUE}
+process(data = MD4, y = "confront.AVG", x = "ethnic.media.exposure.AVG",
+        w = "group.AVG", cov = "Gen", model=1, center=2, moments=1, jn=1,
+        modelbt=1, boot=10000,seed=654321)
+```
+
+Neither personal nor group discrimination is a significant moderator
